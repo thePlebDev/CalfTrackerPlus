@@ -1,26 +1,30 @@
 package com.elliottsoftware.calvingtrackerplus.viewModels
 
+import android.app.Application
 import androidx.lifecycle.*
 import com.elliottsoftware.calvingtrackerplus.database.CalfDAO
+import com.elliottsoftware.calvingtrackerplus.database.CalfDatabase
 import com.elliottsoftware.calvingtrackerplus.models.Calf
 import com.elliottsoftware.calvingtrackerplus.repositories.CalfRepository
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
-class CalfViewModel(private val repository: CalfRepository): ViewModel() {
+class CalfViewModel(application: Application): ViewModel() {
 
-    val allCalves: LiveData<List<Calf>> = repository.allCalves.asLiveData()
+    private val allCalves: LiveData<List<Calf>>
+    private val repository: CalfRepository
 
-    fun  insert(calf: Calf) = viewModelScope.launch {
-        repository.insert(calf)
-    }
-}
-class CalfViewModelFactory(private val repository: CalfRepository): ViewModelProvider.Factory {
 
-    override fun <T : ViewModel> create(modelClass: Class<T>): T {
-        if (modelClass.isAssignableFrom(CalfViewModel::class.java)) {
-            @Suppress("UNCHECKED_CAST")
-            return CalfViewModel(repository) as T
+   init {
+       val calfDAO = CalfDatabase.getDatabase(application).calfDao()
+       repository = CalfRepository(calfDAO)
+       allCalves = repository.allCalves
+   }
+
+    fun addCalf(calf: Calf){
+        viewModelScope.launch(Dispatchers.IO){
+            repository.insert(calf)
         }
-        throw IllegalArgumentException("Unknown ViewModel class")
     }
+
 }

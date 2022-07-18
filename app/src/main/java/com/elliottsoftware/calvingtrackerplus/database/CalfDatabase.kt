@@ -4,29 +4,32 @@ import android.content.Context
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
+import androidx.sqlite.db.SupportSQLiteDatabase
 import com.elliottsoftware.calvingtrackerplus.models.Calf
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
+import java.util.*
 
 @Database(entities = [Calf::class],version = 1, exportSchema = false)
 abstract class CalfDatabase: RoomDatabase() {
 
-    //let the database know about the DAO
-    abstract fun calfDao():CalfDAO
+    abstract fun calfDao(): CalfDAO
 
     companion object{
-        //singleton prevents multiple instances of database opening at the same time
-        @Volatile //HOLDS THE INSTANCE OF THE DATABASE
-        private var INSTANCE: CalfDatabase? = null
-        fun getDatabase(context: Context): CalfDatabase {
-            //if the INSTANCE is not null, return it,
-            //if it is, then create the database
-            return INSTANCE ?: synchronized(this) {
+        @Volatile
+        private var INSTANCE: CalfDatabase? = null;
+
+        fun getDatabase(context: Context): CalfDatabase{
+            val instance = INSTANCE
+            if(instance != null){
+                return instance
+            }
+            synchronized(this){
                 val instance = Room.databaseBuilder(
                     context.applicationContext,
                     CalfDatabase::class.java,
                     "calf_database"
-                )
-                    .fallbackToDestructiveMigration()
-                    .build()
+                ).build()
                 INSTANCE = instance
                 return instance
             }
